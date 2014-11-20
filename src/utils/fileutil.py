@@ -16,6 +16,7 @@ import csv,os,shutil
 #创建目录
 #得到当前目录
 #删除目录
+#遍历目录下所有文件或目录
 ###############文件和目录通用相关操作#######
 #判断文件或目录是否存在
 #获取文件或目录的大小
@@ -158,7 +159,12 @@ class FileUtil:
         allPath=os.path.abspath(filePath)
         return allPath
      
-
+    #遍历目录下所有文件或目录
+    def listCatalogue(self,catalogueName):
+        files=os.listdir(catalogueName)
+        for eachFile in files:
+            print eachFile
+        
 if __name__=='__main__':
     fu = FileUtil()
     print 'hehe'
