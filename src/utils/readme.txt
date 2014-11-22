@@ -14,4 +14,5 @@ remoteutil.py    包含scp和ssh命令
 timeutil.py      
 webpageutil.py
 webviewutil.pyw  操作浏览器的类
+imageutil.py
 '''
