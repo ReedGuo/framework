@@ -1,5 +1,5 @@
 #-*- coding: UTF-8 -*-
-import sys,time,os,urllib
+import sys,time,os,urllib,random
 from hashlib import md5
 
 #显示进度条
@@ -11,6 +11,11 @@ from hashlib import md5
 #睡眠一会儿
 #是否是str类型。返回True 或False
 #将网页转码,避免生成乱码 
+#生成随机数
+#将列表顺序打乱
+#*的使用      *表示数组或列表
+#**的使用    **表示字典
+#从指定序列中随机获取指定长度的片断
 
 
 class CommonUtil:
@@ -100,10 +105,65 @@ class CommonUtil:
         except:
             return content
     
+    #生成随机数
+    #type=int整形    type=float浮点型
+    def generateRandomNumber(self,beginNumber,endNumber,type='int'):
+        if type=='int':
+            beginNumber = int(beginNumber)
+            endNumber = int(endNumber)
+            number = random.randint(beginNumber, endNumber)#beginNumber<=number<=endNumber
+        elif type=='float':
+            number = random.uniform(beginNumber, endNumber)
+        return number
+    
+    #将列表顺序打乱
+    def shuffleListOrder(self,originalList):
+        random.shuffle(originalList)
+        return originalList
+    
+    
+    #*的使用      *表示数组或列表
+    def reedGuo2(self,*size_info):
+        print size_info
+        print type(size_info)#dict类型
+    
+    #*的使用      *表示数组或列表    
+    def reedGuo3(self,width,height):
+        print width,height
+    
+    #**的使用    **表示字典
+    #调用方法  commonutil.reedGuo1(host= 'www.baidu.com' ,port = 'cd',path = 'af')
+    def reedGuo1(self,**http_info):
+        print http_info
+        print type(http_info)#dict类型
+    
+    #参数 从指定序列中随机获取指定长度的片断
+    #seq既可以是list,也可以是字符串
+    def getSnip(self,seq,length):
+        s = random.sample(seq,length)#返回一个列表
+        if self.isStr(seq):
+            return ''.join(s)
+        return s
+        
 
 if __name__ == '__main__':  
     commonutil = CommonUtil()
-    reed = 'guo%Y%m%d'
+    #commonutil.reedGuo1(host= 'www.baidu.com' ,port = 'cd',path = 'af')
+    size = (140,40)
+    #commonutil.reedGuo3(*size)
+    reed = []
+    reed.append('guo')
+    reed.append('feng')
+    reed.append('is')
+    reed.append('a')
+    reed.append('sb')
+    #print reed
+    #print commonutil.shuffleListOrder(reed)
+    #print commonutil.generateRandomNumber(5.5,60.57,'float')
+    seq = 'guofengisasb'
+    seq = ['I','love','luwei','very','much']
+    print commonutil.getSnip(seq,3)
+
 
 
 
