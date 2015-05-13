@@ -1,104 +1,41 @@
 #-*- coding: UTF-8 -*-
-import lxml.html    # python-lxml
-import urlparse
-import re
 
-class WebPage:
-    
-    ###########################################
-    #   WEBPAGE CONSTRUCTOR
-    ###########################################
-    def __init__(self, url, html):
-        self.url = url
-        self.html = html
-        self.doc = lxml.html.fromstring(self.html)
-        self.links = {}
+import lxml.etree
+from fileutil import FileUtil
 
-    #######################################
-    # parsing links from html page
-    #######################################
-    def parseLinks(self):
-        for elem, attr, link, pos in self.doc.iterlinks():
-            absolute = urlparse.urljoin(self.url, link.strip())
-            #print elem.tag ,attr, absolute, pos
-            if elem.tag in self.links:
-                self.links[elem.tag].append(absolute)
-            else:
-                self.links[elem.tag] = [absolute]
-        return self.links
-
-    # filter links
-    def filter_links(self,tags=[],patterns=[]):
-        #CHANGES Apr 17 2011 START
-        #patterns = []
-        #for p in str_patterns:
-        #    patterns.append(re.compile(p))
-        #CHANGES Apr 17 2011 E N D
-        ##
-        filterlinks = []
-        if len(tags)>0:
-            for tag in tags:
-                for link in self.links[tag]:
-                    if len(patterns) == 0:
-                        pass
-                        #filterlinks.append(link)
-                    else:
-                        for pattern in patterns:
-                            if pattern.match(link)!=None:
-                                filterlinks.append(link)
-                                continue
-        else:
-            for k,v in self.links.items():
-                for link in v:
-                    if len(patterns) == 0:
-                        pass
-                        #filterlinks.append(link)
-                    else:
-                        for pattern in patterns:
-                            if pattern.match(link)!=None:
-                                filterlinks.append(link)
-                                continue
-
-        return list(set(filterlinks))
-
-        return filterlinks    
-
-
-    # form 
-    def get_form(self, index):
-        form = self.doc.forms[index]
-        form.action = urlparse.urljoin(self.url, form.action)
-        return form.action, form.fields
-
-    #
-    def get_html(self):
-        return self.html
+#http://lxml.de/lxmlhtml.html
+#http://www.cnblogs.com/descusr/archive/2012/06/20/2557075.html
+#http://docs.python-guide.org/en/latest/scenarios/scrape/
 
     
-if __name__ == "__main__":
-    import time
-    from downloader import DownloadManager
-    downloader = DownloadManager()
+if __name__=='__main__':
+    fileutil = FileUtil()
+    content = fileutil.readLocalFile('./example.html')
+    page = lxml.etree.HTML(content.decode('UTF-8'), parser=None, base_url=None)
 
-    url = "http://www.cs.colorado.edu/"
-    error_msg, url, redirected_url, html = downloader.download(url)
-    print error_msg, url, redirected_url, len(html)
-    time.sleep(2)
 
-    page = WebPage(url, html)
-    page.parse_links()
-    links = page.filter_links(tags=['a'], str_patterns = ['^(http://www\.cs\.colorado\.edu)(/info.+)$'])
-
-    elements = page.doc.findall('./body//div') 
-    for e in elements:
-        print "ELEMETNS =========================================="
-        print lxml.html.tostring(e,pretty_print=True)
-        print "ITEMS------------------------------------------"
-        print e.items()
-        print "TEXT-CONTENT-----------------------------------"
-        print e.text_content()
-        print "CLASSES-----------------------------------"
-        classes = e.find_class("NewsHeadline")
-        for c in classes:
-            lxml.html.tostring(c)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    '''
+    for image in images:
+        imageDict = image.attrib
+        try:
+            print imageDict['href']
+        except Exception, e:
+            print 'fail'
+    '''
+    '''
+    buyers = doc.xpath('//div[@title="buyer-name"]/text()')
+    prices = doc.xpath('//span[@class="item-price"]/text()')
+    print buyers
+    print prices
+    '''
     

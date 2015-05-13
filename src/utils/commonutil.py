@@ -1,8 +1,10 @@
 #-*- coding: UTF-8 -*-
-import sys,time,os,urllib,random
-from hashlib import md5
 
+'''
+本类包含常用操作
 #显示进度条
+#调用系统命令（高级用法）
+#获取access token(curl方式)
 #将带时间格式的字符串替换成真正的时间字符串
 #将字典类型的数据转换成url码
 #延迟退出，要不然调试窗口一下子就没有了
@@ -16,6 +18,10 @@ from hashlib import md5
 #*的使用      *表示数组或列表
 #**的使用    **表示字典
 #从指定序列中随机获取指定长度的片断
+'''
+
+import sys,time,os,urllib,random,subprocess,json
+import hashlib
 
 
 class CommonUtil:
@@ -30,6 +36,24 @@ class CommonUtil:
         print Progress+"                           \r",
         sys.stdout.flush()
     
+    
+    #调用系统命令（高级用法）
+    #参数cmdStr  多条命令以分号分割
+    def callSystemCommandAdvance(self,cmdStr):
+        p = subprocess.Popen(cmdStr, shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        print 'stdout:',stdout
+        print 'stderr:',stderr
+    
+    #获取access token
+    def getAccessToken(self):
+        token_cmd = '''curl -s -d "grant_type=password" -d "client_id=3MVG9Y6d_Btp4xp6Vd8gA42F.T7wInE20rDK4Pta2LIbHRhXll.HfV_oxUizgVTxkt3Q.C2UcwVnvzz6SeFlB" -d "client_secret=5167302065507657205" -d "username=el" -d "password=Pivotan" https://ap1.salesforce.com/services/oauth2/token''';
+        p = subprocess.Popen(token_cmd, shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        outputToken = json.loads(stdout)
+        access_token = outputToken['access_token']
+        print 'access_token',access_token
+        
     #将带时间格式的字符串替换成真正的时间字符串
     #参数： strWithDate  带时间参数的字符串 如guofeng_%Y-%m-%d-%H:%M:%S.csv   。此函数将把它变成  guofeng_2014-08-30-13:53:01.csv
     def replaceStrWithDate(self,strWithDate):
@@ -38,14 +62,10 @@ class CommonUtil:
     #将字典类型的数据转换成url码
     #参数： dictData：字典数据
     def dictToUrlData(self,dictData):
-        if not commonutil.isDict(dictData):#如果要转换的数据不是字典类型
+        if not self.isDict(dictData):#如果要转换的数据不是字典类型
+            print 'Parameter must be dictionary type.'
             return ''
-        
-        ret=''
-        for i in dictData:
-            ret+='&'+urllib.quote(str(i))+'='+urllib.quote(str(dictData[i]))
-        ret=ret.lstrip('&')
-        return ret
+        return urllib.urlencode(dictData)#类似于urllib.quote()
      
     #延迟退出，要不然调试窗口一下子就没有了
     #参数：msg 要打印的信息  seconds:sleep的时间
@@ -62,7 +82,8 @@ class CommonUtil:
     #将字符串用md5压缩
     #参数：content：要压缩的内容
     def md5Str(self,content):
-        m = md5.new(content)
+        m = hashlib.md5()
+        m.update(content)
         m.digest()
         return m.hexdigest()
     
@@ -148,21 +169,10 @@ class CommonUtil:
 
 if __name__ == '__main__':  
     commonutil = CommonUtil()
-    #commonutil.reedGuo1(host= 'www.baidu.com' ,port = 'cd',path = 'af')
-    size = (140,40)
-    #commonutil.reedGuo3(*size)
-    reed = []
-    reed.append('guo')
-    reed.append('feng')
-    reed.append('is')
-    reed.append('a')
-    reed.append('sb')
-    #print reed
-    #print commonutil.shuffleListOrder(reed)
-    #print commonutil.generateRandomNumber(5.5,60.57,'float')
-    seq = 'guofengisasb'
-    seq = ['I','love','luwei','very','much']
-    print commonutil.getSnip(seq,3)
+    dict={}
+    dict['name'] = '=4'
+    print commonutil.dictToUrlData(dict)
+    
 
 
 

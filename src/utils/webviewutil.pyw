@@ -45,12 +45,20 @@ class Browser():
         url = self.webFrame.url().toString()
         #print 'url is: ' + str(url)
         '''
-                    每次执行一个连接，都出发single()这个方法
+        The load* signals are fired once for each frame that is loaded.
+        To capture only the first set of signals, connect to the corresponding signals of the main frame:
+        It is 'self.webFrame.loadFinished.connect', rather than 'self.webView.loadFinished.connect' any more.
         '''
-        #self.webView.loadFinished.connect(self.callsSlot)#This signal is emitted when a load of the page is finished. ok will indicate whether the load was successful or any error occurred. 这句代码的另外一种写法是   QtCore.QObject.connect(self.webView,QtCore.SIGNAL("loadFinished(bool)"),self.callsSlot)
+        #self.webPage.frameCreated.connect(self.onFrame)
+        #self.webFrame.loadFinished.connect(self.callsSlot)#This signal is emitted when a load of the page is finished. ok will indicate whether the load was successful or any error occurred. 这句代码的另外一种写法是   QtCore.QObject.connect(self.webView,QtCore.SIGNAL("loadFinished(bool)"),self.callsSlot)
         self.callsSlot()
         self.webView.show()
-        
+    
+    #frame完全加载之后   
+    def onFrame(self,val):
+        #print 'Frame Created:', val.frameName()
+        pass
+            
     #linkClicked这个信号对应的槽
     #url是QUrl类型
     def linkClickes(self, url):

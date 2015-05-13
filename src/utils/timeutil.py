@@ -79,10 +79,13 @@ class TimeUtil:
         dt=time.strftime('%m/%d/%Y %I:%M:%S %p',time.gmtime(float(dt)))    
         return dt
 
-
+    #得到周日的日期
+    def getSundayDateWeeksAgo(self,weeksago=1,format='%Y-%m-%d'):
+        week = int(time.strftime("%w"))
+        return time.strftime(format,time.localtime(time.time()-(86400*week)-7*86400*(weeksago-1)))
 
 if __name__=='__main__':
     timeutil = TimeUtil()
     #print timeutil.secondsToTimeStr(1409726252742)
-    print timeutil.timeStrToIntTime('2014-09-03 18:18:18')
+    print timeutil.getSundayDateWeeksAgo()
 

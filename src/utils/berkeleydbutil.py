@@ -1,93 +1,109 @@
 #-*- coding: UTF-8 -*-
+
+'''
+本类涉及到berkeley db的所有基础操作
+目的：构建URL的TODO表
+'''
+
 from bsddb import db
-from utils.commonutil import *
-dirname=os.path.dirname(sys.argv[0])
-dirname += '/crawler/berkeleydb'
+from commonutil import CommonUtil
+import sys,os
+
+dirname=os.path.dirname(sys.argv[0])#数据库存放路径
+dirname += '/berkeleydb'
+
+commonUtil = CommonUtil()
 #基类
 class CrawlerDB:
-    def __init__(self, db_file, env_file=dirname+'/db_home'):
-        self.database_file = db_file
+    
+    #dbFile:数据库名字。如visited.db
+    #envFile：数据库环境的路径
+    def __init__(self, dbFile, envFile=dirname):
+        self.databaseFile = dbFile#数据库名字
         try:
-            os.mkdir(env_file)
+            os.mkdir(envFile)
         except:
             pass
         self.dbenv = db.DBEnv()# 创建数据库环境
-        self.dbenv.open(env_file, db.DB_CREATE | db.DB_INIT_MPOOL)# 打开数据库环境
-        self.database = db.DB(self.dbenv,0)
-
-    #打开数据库
-    def open_db(self, dbtype, readonly):
-        if readonly == True:
-            self.BDB.open(self.database_file,dbname=None,mode=0,txn=None)
-            return
-        if dbtype == 'DB_HASH':
-            #if cache == True:
-                #self.BDB.set_cachesize(0,536870912)
-            self.database.open(self.database_file,dbname=None,dbtype=db.DB_HASH,flags=db.DB_CREATE,mode=0,txn=None)
-        elif dbtype == 'DB_BTREE':
-            #if cache == True:
-                #self.BDB.set_cachesize(0,536870912)
-            self.database.open(self.database_file,dbname=None,dbtype=db.DB_BTREE,flags=db.DB_CREATE,mode=0,txn=None)
-        elif dbtype == 'DB_QUEUE':
-            self.database.set_re_len(1024)
-            self.database.open(self.database_file,dbname=None,dbtype=db.DB_QUEUE,flags=db.DB_CREATE,mode=0,txn=None)
-        elif dbtype == 'DB_RECNO':
-            self.database.open(self.database_file,dbname=None,dbtype=db.DB_RECNO,flags=db.DB_CREATE,mode=0,txn=None)
-        else:
-            self.database.open(self.database_file,dbname=None,mode=0,txn=None)
+        self.dbenv.open(envFile, db.DB_CREATE | db.DB_INIT_MPOOL)# 打开数据库环境。db.DB_INIT_MPOOL：  Initialize the shared memory buffer pool subsystem. This subsystem should be used whenever an application is using any Berkeley DB access method.
+        self.database = db.DB(self.dbenv,0)#构造一个数据库
     
-    #将key/value对插入到数据库
-    #参数 key:单个的url
-    def insertUrl(self,key,val=""):
-        try:
-            self.database.put(md5Str(key),val)
-            self.database.sync()
-        except:
-            raise
+    #关掉数据库 
+    def __del__(self):
+        self.database.sync()
+        self.database.close()
+        self.dbenv.close()
         
-    #将key/value对插入到数据库
-    #参数 keys: url list
-    def insertUrls(self,keys,val=""):
-        try:
-            for key in keys:
-                self.database.put(md5Str(key),val)
-            self.database.sync()
-        except:
-            raise
-
+    #打开数据库
+    #dbtype:数据结构类型。分为队列类型和hash类型等等
+    #open函数的原型：open(filename, dbname=None, dbtype=DB_UNKNOWN, flags=0, mode=0660, txn=None)
+    def openDb(self, dbtype):
+        self.dbType = dbtype
+        if not dbtype:
+            raise RuntimeError('Dbtype can not be null.')
+        if dbtype == 'DB_HASH':
+            self.database.open(self.databaseFile,dbname=None,dbtype=db.DB_HASH,flags=db.DB_CREATE,mode=0,txn=None)
+        elif dbtype == 'DB_BTREE':
+            self.database.open(self.databaseFile,dbname=None,dbtype=db.DB_BTREE,flags=db.DB_CREATE,mode=0,txn=None)
+        elif dbtype == 'DB_QUEUE':#Ordered
+            self.database.set_re_len(1024)
+            self.database.open(self.databaseFile,dbname=None,dbtype=db.DB_QUEUE,flags=db.DB_CREATE,mode=0,txn=None)
+        elif dbtype == 'DB_RECNO':
+            self.database.open(self.databaseFile,dbname=None,dbtype=db.DB_RECNO,flags=db.DB_CREATE,mode=0,txn=None)
+    
+    #从队列的顶部拿到一个url
+    def popUrl(self):
+        return self.database.consume()#消费一个url
+    
+    #将key/value对 插入到数据库
+    #参数 key:单个的url
+    def insertUrl(self,key,val='',md5=False):
+        key = key.lower()
+        if md5:
+            key = commonUtil.md5Str(key)
+        if self.dbType=='DB_QUEUE' or self.dbType =='DB_RECNO':
+            self.database.append(key)
+        else:
+            self.database.put(key,val)
+        self.database.sync()
+        
     #根据key得到value
-    def selectValue(self,key):
-        val = self.database.get(md5Str(key))
+    #参数 key:单个的url
+    def selectValue(self,key,md5=False):
+        key = key.lower()
+        if md5:
+            val = self.database.get(commonUtil.md5Str(key))
+        else:
+            val = self.database.get(key)
         return val
     
     #删除key/value对
-    def deleteKey(self,key):
+    #参数 key:单个的url
+    def deleteKey(self,key,md5=False):
+        key = key.lower()
         try:
-            self.database.delete(md5Str(key))
+            if md5:
+                self.database.delete(commonUtil.md5Str(key))
+            else:
+                self.database.delete(key)
         except:
-            return False
-        return True
+            pass
 
     #是否存在指定的key
-    def existKey(self,key):
-        sval = self.database.get(md5Str(key))
+    #参数 key:单个的url
+    def existKey(self,key,md5=False):
+        key = key.lower()
+        if md5:
+            sval = self.database.get(commonUtil.md5Str(key))
+        else:
+            sval = self.database.get(key)
         if sval != None:
             return True
         else:
             return False
 
-    #关掉数据库 
-    def __del__(self):
-        try:
-            self.database.sync()
-            self.database.close()
-            self.dbenv.close()
-        except:
-            pass
-        
-
     #得到游标
-    def get_cursor(self):
+    def getCursor(self):
         return self.database.cursor()
 
     #将数据库内容清空
@@ -96,56 +112,9 @@ class CrawlerDB:
     
     #得到key/value数目
     def getCount(self):
-        return len(self.database.items())    
-    
-#构造未访问的爬虫队列
-#继承自berleley db基础类        用了queue数据结构
-class QueueDB(CrawlerDB):
-    
-    def __init__(self, dbfile='unvisited.db'):
-        CrawlerDB.__init__(self, dbfile)
-        self.open_db('DB_QUEUE', False)
-    
-    #从队列取出一个元素    
-    def popUrl(self):
-        url = self.database.consume()#消费一个url
-        if url == None:#means crawling task is done.
-            return url
-        url = url[1].strip()
-        return url
-    
-    #把元素追加到队列中
-    def pushUrls(self, url_list):
-        for url in url_list:
-            self.database.append(url)
-            
-    
-#构造已访问的爬虫 hash set
-#继承自berleley db基础类        用了hash数据结构
-class VisitedDB(CrawlerDB):
-    def __init__(self, dbfile='visited.db'):
-        CrawlerDB.__init__(self, dbfile)
-        self.open_db('DB_HASH', False)
-    
-    #得到不重复的url list
-    def getUniqueUrlList(self, url_list):
-        unique_urls = []
-        for url in url_list:
-            if not self.existKey(url):
-                self.insertUrl(url)
-                unique_urls.append(url)
-        return unique_urls
-    
+        return len(self.database.items())
+   
     
 if __name__ == "__main__":
-
-    visitedobj = VisitedDB()
-    visitedobj.insertUrl('wwer', 'gf')
-    #print visitedobj.select('guofeng')
-    print visitedobj.getCount()
-
-    '''
-    queuedb = QueueDB()
-    queuedb.pushUrls(['www.baidu.com','www.google.com'])
-    print queuedb.getUrlCount()
-    '''
+    pass
+    

@@ -32,6 +32,7 @@ if not options.SqlFile or not options.DownFile:
 print options.SqlFile
 print options.DownFile
 print options.Reed
+raise RuntimeError('Configuration file is not found on this path: .')
 
 
 
